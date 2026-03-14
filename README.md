@@ -38,9 +38,6 @@ HashBrowns Command Center is a multi-client DreamBot organizer / manager that le
 ### Settings
 ![Settings](assets/screenshots/settings.png)
 
-### Brand Icon
-![App Icon](assets/app-icon.png)
-
 ## Projects
 
 - `ClientDashboard/` - Main WPF app
