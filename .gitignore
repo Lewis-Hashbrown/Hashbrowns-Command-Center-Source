@@ -10,3 +10,4 @@ publish-v*/
 *.log
 AutoTest/
 OneClick-LiveDreamBotTest.ps1
+HashBrowns-Command-Center/
