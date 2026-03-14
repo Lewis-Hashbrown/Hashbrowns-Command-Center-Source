@@ -41,16 +41,16 @@ powershell -ExecutionPolicy Bypass -File .\Build-Portable.ps1
 
 ## Screenshots
 
-### Dashboard Overview
+### Dashboard Overview (Stretch to fill mode)
 ![Dashboard Overview](assets/screenshots/dashboard-stretch.png)
 
 ### Keep Default Ratio Mode
 ![Keep Default Ratio](assets/screenshots/dashboard-keep-ratio.png)
 
-### High Client Count
+### High Client Count (Stretch to fill mode)
 ![36 Clients](assets/screenshots/dashboard-36-clients.jpg)
 
-### Second Page View
+### Second Page View (Stretch to fill mode)
 ![Second Page](assets/screenshots/dashboard-second-page.jpg)
 
 ### Settings
