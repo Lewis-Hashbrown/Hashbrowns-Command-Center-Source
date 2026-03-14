@@ -8,4 +8,5 @@ publish-v*/
 *.cache
 *.tmp
 *.log
-
+AutoTest/
+OneClick-LiveDreamBotTest.ps1

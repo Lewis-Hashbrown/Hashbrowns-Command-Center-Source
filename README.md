@@ -21,6 +21,26 @@ HashBrowns Command Center is a multi-client DreamBot organizer / manager that le
 - Startup setup prompt if DreamBot JAR path is not configured
 - Full source code included for transparency
 
+## Quick Start (For Most Users)
+
+1. Download this repo as ZIP and extract it.
+2. Open the extracted folder.
+3. Run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Build-Portable.ps1
+```
+
+4. After build finishes, open this folder:
+
+`HashBrowns-Command-Center`
+
+5. Run this file:
+
+`HashBrowns Command Center.exe`
+
+This is the main app exe and is intentionally named `HashBrowns Command Center.exe` (not `ClientDashboard.exe`).
+
 ## Screenshots
 
 ### Dashboard Overview
@@ -40,8 +60,9 @@ HashBrowns Command Center is a multi-client DreamBot organizer / manager that le
 
 ## Projects
 
-- `ClientDashboard/` - Main WPF app
-- `AutoTest/` - Test/diagnostic tooling
+- `ClientDashboard/` - Main WPF app source code
+
+`AutoTest` and `OneClick-LiveDreamBotTest.ps1` are not required for normal users and are not included in this repo.
 
 ## Requirements
 
@@ -65,3 +86,9 @@ dotnet run --project ClientDashboard/ClientDashboard.csproj
 ```powershell
 dotnet publish ClientDashboard/ClientDashboard.csproj -c Release -o ClientDashboard/publish
 ```
+
+## Where the EXE is
+
+- If you used `Build-Portable.ps1`, the exe is here:
+  - `HashBrowns-Command-Center\HashBrowns Command Center.exe`
+- If you used `dotnet publish` manually, the exe is in whatever output folder you passed with `-o`.
