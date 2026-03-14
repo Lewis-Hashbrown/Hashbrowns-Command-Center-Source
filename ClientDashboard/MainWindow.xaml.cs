@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     private readonly Dictionary<IntPtr, IntPtr> _toolToClient = new();
     private readonly Dictionary<IntPtr, long> _originalTaskbarExStyles = new();
     private readonly HashSet<IntPtr> _manuallyMutedClients = new();
+    private readonly HashSet<IntPtr> _manuallyUnmutedClients = new();
     private readonly DispatcherTimer _pollTimer;
     private readonly DispatcherTimer _captureTimer;
     private readonly DispatcherTimer _usageTimer;
@@ -345,6 +346,7 @@ public partial class MainWindow : Window
                 RemoveToolMapping(tool);
             _clientPanels.Remove(h);
             _manuallyMutedClients.Remove(h);
+            _manuallyUnmutedClients.Remove(h);
             if (_controlledClientHwnd == h)
                 _controlledClientHwnd = IntPtr.Zero;
         }
@@ -455,7 +457,7 @@ public partial class MainWindow : Window
         var muteItem = new System.Windows.Controls.MenuItem { Header = "Mute Client" };
         contextMenu.Opened += (_, _) =>
         {
-            muteItem.Header = IsClientManuallyMuted(hwnd) ? "Unmute Client" : "Mute Client";
+            muteItem.Header = IsClientMutedByPolicy(hwnd) ? "Unmute Client" : "Mute Client";
         };
         muteItem.Click += (_, _) => ToggleClientManualMute(hwnd);
         var closeItem = new System.Windows.Controls.MenuItem { Header = "Close Client" };
@@ -481,6 +483,7 @@ public partial class MainWindow : Window
         if (hwnd == IntPtr.Zero || !NativeMethods.IsWindow(hwnd))
             return;
         _manuallyMutedClients.Remove(hwnd);
+        _manuallyUnmutedClients.Remove(hwnd);
         UpdateAudioMuteState();
 
         if (_clientToolWindows.TryGetValue(hwnd, out var toolHwnd) && NativeMethods.IsWindow(toolHwnd))
@@ -508,16 +511,38 @@ public partial class MainWindow : Window
         }
     }
 
-    private bool IsClientManuallyMuted(IntPtr hwnd) => _manuallyMutedClients.Contains(hwnd);
+    private bool IsClientMutedByPolicy(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero || !NativeMethods.IsWindow(hwnd))
+            return false;
+
+        if (_manuallyUnmutedClients.Contains(hwnd))
+            return false;
+        if (_manuallyMutedClients.Contains(hwnd))
+            return true;
+
+        if (!_config.MuteAllExceptControlled)
+            return false;
+
+        return hwnd != _controlledClientHwnd;
+    }
 
     private void ToggleClientManualMute(IntPtr hwnd)
     {
         if (hwnd == IntPtr.Zero)
             return;
-        if (_manuallyMutedClients.Contains(hwnd))
+
+        if (IsClientMutedByPolicy(hwnd))
+        {
             _manuallyMutedClients.Remove(hwnd);
+            _manuallyUnmutedClients.Add(hwnd);
+        }
         else
+        {
+            _manuallyUnmutedClients.Remove(hwnd);
             _manuallyMutedClients.Add(hwnd);
+        }
+
         UpdateAudioMuteState();
     }
 
@@ -929,11 +954,7 @@ public partial class MainWindow : Window
         };
         controlWindow.Show();
 
-        if (clickScreenPoint.HasValue)
-        {
-            var p = clickScreenPoint.Value;
-            NativeMethods.SetCursorPos(p.X, p.Y);
-        }
+        _ = clickScreenPoint;
     }
 
     private void TileClickControlBtn_Click(object sender, RoutedEventArgs e)
@@ -948,6 +969,10 @@ public partial class MainWindow : Window
         _config.MuteAllExceptControlled = !_config.MuteAllExceptControlled;
         _config.Save();
         UpdateMuteAllButtonText();
+        // Global toggle is authoritative: reset all per-client mute overrides each time.
+        _manuallyMutedClients.Clear();
+        _manuallyUnmutedClients.Clear();
+
         UpdateAudioMuteState();
     }
 
@@ -1115,22 +1140,36 @@ public partial class MainWindow : Window
     {
         var pids = GetTrackedClientPids();
         int? controlledPid = null;
-        if (_controlledClientHwnd != IntPtr.Zero && NativeMethods.IsWindow(_controlledClientHwnd))
+        if (!_config.MuteAllExceptControlled &&
+            _controlledClientHwnd != IntPtr.Zero &&
+            NativeMethods.IsWindow(_controlledClientHwnd))
         {
             NativeMethods.GetWindowThreadProcessId(_controlledClientHwnd, out uint pid);
             if (pid != 0)
                 controlledPid = (int)pid;
         }
         var forcedMutePids = new HashSet<int>();
+        var forcedUnmutePids = new HashSet<int>();
         foreach (var hwnd in _manuallyMutedClients.Where(NativeMethods.IsWindow).ToList())
         {
-            foreach (var pid in GetClientProcessFamilyPids(hwnd))
+            foreach (var pid in GetClientProcessFamilyPids(hwnd, includeSameNameSiblings: false))
                 forcedMutePids.Add(pid);
         }
-        _ = _audioMuteManager.ApplyMuteState(pids, controlledPid, _config.MuteAllExceptControlled, forcedMutePids);
+        foreach (var hwnd in _manuallyUnmutedClients.Where(NativeMethods.IsWindow).ToList())
+        {
+            foreach (var pid in GetClientProcessFamilyPids(hwnd, includeSameNameSiblings: false))
+                forcedUnmutePids.Add(pid);
+        }
+
+        _ = _audioMuteManager.ApplyMuteState(
+            pids,
+            controlledPid,
+            _config.MuteAllExceptControlled,
+            forcedMutePids,
+            forcedUnmutePids);
     }
 
-    private HashSet<int> GetClientProcessFamilyPids(IntPtr hwnd)
+    private HashSet<int> GetClientProcessFamilyPids(IntPtr hwnd, bool includeSameNameSiblings = false)
     {
         var pids = new HashSet<int>();
         if (hwnd == IntPtr.Zero || !NativeMethods.IsWindow(hwnd))
@@ -1145,23 +1184,26 @@ public partial class MainWindow : Window
         foreach (var childPid in GetDescendantProcessIds(new HashSet<int> { rootPid }, maxDepth: 6))
             pids.Add(childPid);
 
-        try
+        if (includeSameNameSiblings)
         {
-            using var rootProc = Process.GetProcessById(rootPid);
-            string name = rootProc.ProcessName;
-            if (!string.IsNullOrWhiteSpace(name))
+            try
             {
-                foreach (var proc in Process.GetProcessesByName(name))
+                using var rootProc = Process.GetProcessById(rootPid);
+                string name = rootProc.ProcessName;
+                if (!string.IsNullOrWhiteSpace(name))
                 {
-                    try { pids.Add(proc.Id); }
-                    catch { }
-                    finally { proc.Dispose(); }
+                    foreach (var proc in Process.GetProcessesByName(name))
+                    {
+                        try { pids.Add(proc.Id); }
+                        catch { }
+                        finally { proc.Dispose(); }
+                    }
                 }
             }
-        }
-        catch
-        {
-            // ignore
+            catch
+            {
+                // ignore
+            }
         }
 
         return pids;

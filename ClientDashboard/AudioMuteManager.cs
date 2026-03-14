@@ -25,7 +25,12 @@ public sealed class AudioMuteManager
         public string Note { get; set; } = "ok";
     }
 
-    public AudioMuteDebugInfo ApplyMuteState(HashSet<int> trackedClientPids, int? controlledPid, bool muteAllExceptControlled, HashSet<int>? forcedMutePids = null)
+    public AudioMuteDebugInfo ApplyMuteState(
+        HashSet<int> trackedClientPids,
+        int? controlledPid,
+        bool muteAllExceptControlled,
+        HashSet<int>? forcedMutePids = null,
+        HashSet<int>? forcedUnmutePids = null)
     {
         AudioMuteDebugInfo result = new()
         {
@@ -39,7 +44,12 @@ public sealed class AudioMuteManager
         {
             try
             {
-                result = ApplyMuteStateCore(trackedClientPids, controlledPid, muteAllExceptControlled, forcedMutePids);
+                result = ApplyMuteStateCore(
+                    trackedClientPids,
+                    controlledPid,
+                    muteAllExceptControlled,
+                    forcedMutePids,
+                    forcedUnmutePids);
             }
             catch (Exception ex)
             {
@@ -63,7 +73,12 @@ public sealed class AudioMuteManager
         return result;
     }
 
-    private AudioMuteDebugInfo ApplyMuteStateCore(HashSet<int> trackedClientPids, int? controlledPid, bool muteAllExceptControlled, HashSet<int>? forcedMutePids)
+    private AudioMuteDebugInfo ApplyMuteStateCore(
+        HashSet<int> trackedClientPids,
+        int? controlledPid,
+        bool muteAllExceptControlled,
+        HashSet<int>? forcedMutePids,
+        HashSet<int>? forcedUnmutePids)
     {
         var debug = new AudioMuteDebugInfo
         {
@@ -199,8 +214,11 @@ public sealed class AudioMuteManager
                         if (volume == null)
                             continue;
 
+                        bool manuallyUnmuted = forcedUnmutePids != null && forcedUnmutePids.Contains(processId);
                         bool manuallyMuted = forcedMutePids != null && forcedMutePids.Contains(processId);
-                        bool shouldMute = manuallyMuted || (muteAllExceptControlled && (!controlledPid.HasValue || processId != controlledPid.Value));
+                        bool shouldMute = manuallyUnmuted
+                            ? false
+                            : manuallyMuted || (muteAllExceptControlled && (!controlledPid.HasValue || processId != controlledPid.Value));
                         Guid eventContext = Guid.Empty;
                         stage = "ISimpleAudioVolume.SetMute";
                         int muteHr = volume.SetMute(shouldMute, ref eventContext);
