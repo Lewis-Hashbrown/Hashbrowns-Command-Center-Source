@@ -39,8 +39,6 @@ powershell -ExecutionPolicy Bypass -File .\Build-Portable.ps1
 
 `HashBrowns Command Center.exe`
 
-This is the main app exe and is intentionally named `HashBrowns Command Center.exe` (not `ClientDashboard.exe`).
-
 ## Screenshots
 
 ### Dashboard Overview
