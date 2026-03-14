@@ -1,0 +1,124 @@
+<Window x:Class="ClientDashboard.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Settings"
+        Width="680"
+        Height="700"
+        MinWidth="620"
+        MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BgDark}">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <Border Background="{StaticResource BgMedium}" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Launch" FontSize="16" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
+                        <TextBlock Text="DreamBot JAR Path" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,4"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="DreamBotPathTextBox" Grid.Column="0" Margin="0,0,8,0" Padding="8"/>
+                            <Button x:Name="BrowsePathBtn" Grid.Column="1" Content="Browse..." Style="{StaticResource DashBtn}" Click="BrowsePathBtn_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Background="{StaticResource BgMedium}" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Display &amp; Control" FontSize="16" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="300"/>
+                                <ColumnDefinition Width="140"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Preview FPS (1-30)" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="PreviewMaxFpsTextBox" Grid.Column="1" Padding="6" TextChanged="PerformanceInput_TextChanged"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="300"/>
+                                <ColumnDefinition Width="140"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Max tiles per page (4-400)" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="MaxTilesPerPageTextBox" Grid.Column="1" Padding="6"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="300"/>
+                                <ColumnDefinition Width="220"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Tile aspect mode" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="TileAspectModeComboBox" Grid.Column="1" Padding="6">
+                                <ComboBoxItem Content="Keep default ratio" Tag="FitWhole"/>
+                                <ComboBoxItem Content="Stretch to fill" Tag="StretchFill"/>
+                            </ComboBox>
+                        </Grid>
+
+                        <CheckBox x:Name="EnableTileClickControlCheckBox"
+                                  Content="Enable tile click control"
+                                  Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="AutoAcceptClientControlCheckBox"
+                                  Content="Auto-accept control prompts"
+                                  Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="MuteAllExceptControlledCheckBox"
+                                  Content="Mute all except controlled client"
+                                  Foreground="{StaticResource TextPrimary}" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="HideManagedClientsFromTaskbarCheckBox"
+                                  Content="Hide managed DreamBot clients from taskbar"
+                                  Foreground="{StaticResource TextPrimary}" Margin="0,0,0,6"/>
+                        <TextBlock x:Name="EffectiveFpsText"
+                                   Foreground="{StaticResource TextSecondary}"
+                                   FontStyle="Italic"/>
+                    </StackPanel>
+                </Border>
+
+                <Expander Header="Advanced" Foreground="{StaticResource TextPrimary}" Background="{StaticResource BgMedium}" Padding="8">
+                    <StackPanel Margin="4">
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="300"/>
+                                <ColumnDefinition Width="140"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Scan interval ms (500-10000)" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="ScanIntervalMsTextBox" Grid.Column="1" Padding="6"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="300"/>
+                                <ColumnDefinition Width="140"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Capture interval override ms (0=from FPS)" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="CaptureIntervalMsTextBox" Grid.Column="1" Padding="6" TextChanged="PerformanceInput_TextChanged"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="300"/>
+                                <ColumnDefinition Width="140"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Grid columns override (0=auto, 1-20)" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                            <TextBox x:Name="GridColumnsOverrideTextBox" Grid.Column="1" Padding="6"/>
+                        </Grid>
+                        <CheckBox x:Name="EnableTileClickAttentionFlashCheckBox"
+                                  Content="Flash tile control button when tile-click is disabled"
+                                  Foreground="{StaticResource TextPrimary}"/>
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="ResetDefaultsBtn" Content="Reset Defaults" Style="{StaticResource DashBtn}" Margin="0,0,8,0" Click="ResetDefaultsBtn_Click"/>
+            <Button x:Name="CancelBtn" Content="Cancel" Style="{StaticResource DashBtn}" Margin="0,0,8,0" Click="CancelBtn_Click"/>
+            <Button x:Name="SaveBtn" Content="Save" Style="{StaticResource DashBtn}" Click="SaveBtn_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
